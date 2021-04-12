@@ -12,4 +12,4 @@ class Thing(SqlAlchemyBase):
     description = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     fought = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     won = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-
+    image = sqlalchemy.Column(sqlalchemy.String, nullable=True)
