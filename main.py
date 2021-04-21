@@ -1,20 +1,19 @@
 from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
-from forms.news import NewsForm
 from forms.user import RegisterForm, LoginForm
 from data.things import Thing
 from data import db_session
+from data.users import User
 
 import random
 
 app = Flask(__name__)
-'''login_manager = LoginManager()
-login_manager.init_app(app)'''
+login_manager = LoginManager()
+login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'sc*FzSPF72itHTt&Cj3bPMAe&4bRxGoH'
 
 
-'''
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
@@ -26,7 +25,6 @@ def load_user(user_id):
 def logout():
     logout_user()
     return redirect("/")
-'''
 
 
 def main():
@@ -101,7 +99,6 @@ def index():
     return render_template("index.html", things=selected_things)
 
 
-'''
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
     form = RegisterForm()
@@ -136,7 +133,6 @@ def login():
             return redirect("/")
         return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
-'''
 
 
 if __name__ == '__main__':
