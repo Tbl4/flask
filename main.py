@@ -53,13 +53,13 @@ def send_email(subject, sender, recipients, text_body, html_body):
 def send_password_reset_email(user):
     print(1)
     token = user.get_reset_password_token()
-    send_email('[Microblog] Reset Your Password',
+    send_email('Reset Your Password',
                sender='ivantishkov2@gmail.com',
                recipients=[user.email],
-               text_body=render_template('email/reset_password.txt',
-                                         user=user, token=token),
-               html_body=render_template('email/reset_password.html',
-                                         user=user, token=token))
+               text_body=render_template('reset_password.txt',
+                                         username=user.name, token=token),
+               html_body=render_template('reset_password_temp.html',
+                                         username=user.name, token=token))
 
 
 @login_manager.user_loader
@@ -170,37 +170,22 @@ def reqister():
     return render_template('register.html', title='Регистрация', form=form)
 
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         db_sess = db_session.create_session()
-#         user = db_sess.query(User).filter(User.email == form.email.data).first()
-#         if user and user.check_password(form.password.data):
-#             login_user(user, remember=form.remember_me.data)
-#             # Пока не придумал
-#             # if user.is_admin:
-#             #     print(1)
-#             #     return redirect("/admin/")
-#             return redirect("/")
-#         return render_template('login.html', message="Неправильный логин или пароль", form=form)
-#     return render_template('login.html', title='Авторизация', form=form)
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
+        print(form.email.data)
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
-        if user is None or not user.check_password(form.password.data):
-            return render_template('login.html', message="Неправильный логин или пароль", form=form)
-        login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('index')
-        return redirect(next_page)
+        print(user)
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            # Пока не придумал
+            # if user.is_admin:
+            #     print(1)
+            #     return redirect("/admin/")
+            return redirect("/")
+        return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
 
 
@@ -210,13 +195,14 @@ def reset_password_request():
         return redirect(url_for('index'))
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.email == form.email.data).first()
         if user:
             send_password_reset_email(user)
-        flash('Check your email for the instructions to reset your password')
+        flash('Проверьте свою электронную почту, туда было отправлена ссылка для сброса пароля.')
         return redirect(url_for('login'))
     return render_template('reset_password_request.html',
-                           title='Reset Password', form=form)
+                           title='Восстановление пароля', form=form)
 
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -228,10 +214,11 @@ def reset_password(token):
         return redirect(url_for('index'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        user.set_password(form.password.data)
         db_sess = db_session.create_session()
-        db_sess.session.commit()
-        flash('Your password has been reset.')
+        user = db_sess.query(User).filter(User.id == user).first()
+        user.set_password(form.password.data)
+        db_sess.commit()
+        flash('Ваш пароль изменен.')
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 

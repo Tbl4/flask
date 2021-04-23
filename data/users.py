@@ -3,16 +3,15 @@ import sqlalchemy
 from flask_login import UserMixin
 from sqlalchemy import orm
 
-from flasker import db
 from time import time
 import jwt
-import app
+
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from .db_session import SqlAlchemyBase
 
 
-class User(SqlAlchemyBase, UserMixin, db.Model):
+class User(SqlAlchemyBase, UserMixin):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
@@ -34,13 +33,13 @@ class User(SqlAlchemyBase, UserMixin, db.Model):
     def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
             {'reset_password': self.id, 'exp': time() + expires_in},
-            app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+            'sc*FzSPF72itHTt&Cj3bPMAe&4bRxGoH', algorithm='HS256')
 
     @staticmethod
     def verify_reset_password_token(token):
         try:
-            id = jwt.decode(token, app.config['SECRET_KEY'],
+            id = jwt.decode(token, 'sc*FzSPF72itHTt&Cj3bPMAe&4bRxGoH',
                             algorithms=['HS256'])['reset_password']
+            return id
         except:
             return
-        return User.query.get(id)

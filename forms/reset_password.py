@@ -1,10 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms import PasswordField, SubmitField
+from wtforms.validators import DataRequired, EqualTo
+from wtforms.fields.html5 import EmailField
 
 
 class ResetPasswordRequestForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = EmailField('Почта', validators=[DataRequired()])
     submit = SubmitField('Request Password Reset')
 
 
