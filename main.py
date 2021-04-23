@@ -1,65 +1,17 @@
-from flask import Flask, render_template, redirect, request, abort, url_for, flash
+from flask import Flask, render_template, redirect, request, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
-from werkzeug.urls import url_parse
 
 from forms.user import RegisterForm, LoginForm
 from data.things import Thing
 from data import db_session
 from data.users import User
-from flask_mail import Mail
 
-import os
-from forms.reset_password import ResetPasswordRequestForm, ResetPasswordForm
 import random
-
-from threading import Thread
-from flask import render_template
-from flask_mail import Message
 
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'sc*FzSPF72itHTt&Cj3bPMAe&4bRxGoH'
-
-mail = Mail(app)
-
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'ivantishkov2@gmail.com'
-app.config['MAIL_PASSWORD'] = 'vi2307ir2604Z_'
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-print(app.config)
-mail.init_app(app)
-
-login_manager.login_view = 'login'
-
-
-def send_async_email(app, msg):
-    print(3)
-    with app.app_context():
-        mail.send(msg)
-
-
-def send_email(subject, sender, recipients, text_body, html_body):
-    print(2)
-    msg = Message(subject, sender=sender, recipients=recipients)
-    msg.body = text_body
-    msg.html = html_body
-    Thread(target=send_async_email, args=(app, msg)).start()
-
-
-def send_password_reset_email(user):
-    print(1)
-    token = user.get_reset_password_token()
-    send_email('[Microblog] Reset Your Password',
-               sender='ivantishkov2@gmail.com',
-               recipients=[user.email],
-               text_body=render_template('email/reset_password.txt',
-                                         user=user, token=token),
-               html_body=render_template('email/reset_password.html',
-                                         user=user, token=token))
 
 
 @login_manager.user_loader
@@ -170,83 +122,17 @@ def reqister():
     return render_template('register.html', title='Регистрация', form=form)
 
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         db_sess = db_session.create_session()
-#         user = db_sess.query(User).filter(User.email == form.email.data).first()
-#         if user and user.check_password(form.password.data):
-#             login_user(user, remember=form.remember_me.data)
-#             # Пока не придумал
-#             # if user.is_admin:
-#             #     print(1)
-#             #     return redirect("/admin/")
-#             return redirect("/")
-#         return render_template('login.html', message="Неправильный логин или пароль", form=form)
-#     return render_template('login.html', title='Авторизация', form=form)
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
-        if user is None or not user.check_password(form.password.data):
-            return render_template('login.html', message="Неправильный логин или пароль", form=form)
-        login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or url_parse(next_page).netloc != '':
-            next_page = url_for('index')
-        return redirect(next_page)
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            return redirect("/")
+        return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
-
-
-@app.route('/reset_password_request', methods=['GET', 'POST'])
-def reset_password_request():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    form = ResetPasswordRequestForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            send_password_reset_email(user)
-        flash('Check your email for the instructions to reset your password')
-        return redirect(url_for('login'))
-    return render_template('reset_password_request.html',
-                           title='Reset Password', form=form)
-
-
-@app.route('/reset_password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    user = User.verify_reset_password_token(token)
-    if not user:
-        return redirect(url_for('index'))
-    form = ResetPasswordForm()
-    if form.validate_on_submit():
-        user.set_password(form.password.data)
-        db_sess = db_session.create_session()
-        db_sess.session.commit()
-        flash('Your password has been reset.')
-        return redirect(url_for('login'))
-    return render_template('reset_password.html', form=form)
-
-# Пока не придумал
-# @app.route('/admin/', methods=['GET'])
-# @login_required
-# def admin():
-#     print(2)
-#     db_sess = db_session.create_session()
-#     user = db_sess.query(User).all()[0]
-#     print(user.is_admin)
-#     if user.is_admin:
-#         return render_template('admin.html')
-#     else:
-#         return redirect('/logout')
 
 
 if __name__ == '__main__':
