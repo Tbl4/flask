@@ -154,7 +154,7 @@ def rating():
     db_sess = db_session.create_session()
     all_things = db_sess.query(Thing).all()
     selected_things = all_things
-    selected_things.sort(key=lambda a: a.fought / max(a.won, 1))
+    selected_things.sort(key=(lambda a: (a.won / max(a.fought, 1), a.won)))
     selected_things.reverse()
     selected_things = selected_things[:min(5, len(all_things))]
     return render_template("rating.html", things=selected_things)
