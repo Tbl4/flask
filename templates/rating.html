@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Что круче?!</h1>
+    <h1>Лучшее</h1>
    {% for item in things %}
         <div class="col-md6 border rounded">
-            <img src=static/img/{{item.image}} alt="Cool picture that you can't see!" width="300">
-            <a href="/vote/{{item.id}}"> <h2> <b> {{item.title}} </b> </h2> </a>
+            <img src=static/img/{{item.image}} alt="Cool picture that you can't see!" width="100">
+	    <h3> {{item.won}} / {{item.fought}} </h3>
+            <h2> <b> {{item.title}} </b> </h2>
             <h4> - {{item.description}} </h4>
             <div>
                 {{ item.content }}

@@ -8,6 +8,7 @@ from data.things import Thing
 from data import db_session
 from data.users import User
 from flask_mail import Mail
+from flask import session
 
 import os
 from forms.reset_password import ResetPasswordRequestForm, ResetPasswordForm
@@ -144,7 +145,42 @@ def index():
     db_sess = db_session.create_session()
     all_things = db_sess.query(Thing).all()
     selected_things = random.sample(all_things, 2)
+    session['options'] = [selected_things[0].id, selected_things[1].id]
     return render_template("index.html", things=selected_things)
+
+
+@app.route("/rating")
+def rating():
+    db_sess = db_session.create_session()
+    all_things = db_sess.query(Thing).all()
+    selected_things = all_things
+    selected_things.sort(key=lambda a: a.fought / max(a.won, 1))
+    selected_things.reverse()
+    selected_things = selected_things[:min(5, len(all_things))]
+    return render_template("rating.html", things=selected_things)
+
+
+@app.route('/vote/<thing_id>', methods=['GET', 'POST'])
+def vote(thing_id):
+    message = 'Ошибка в обработке голоса.'
+    thing_id = int(thing_id)
+    if thing_id in session['options']:
+        if thing_id == session['options'][0]:
+            session['options'] = session['options'][1:]
+        message = 'Ваш голос принят.'
+        db_sess = db_session.create_session()
+        to_increase = db_sess.query(Thing).filter(Thing.id == thing_id).first()
+        db_sess.delete(to_increase)
+        to_increase.fought += 1
+        to_increase.won += 1
+        db_sess.add(to_increase)
+        to_decrease = db_sess.query(Thing).filter(Thing.id == session['options'][0]).first()
+        db_sess.delete(to_decrease)
+        to_decrease.fought += 1
+        db_sess.add(to_decrease)
+        db_sess.commit()
+    flash(message)
+    return redirect(url_for('index'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
