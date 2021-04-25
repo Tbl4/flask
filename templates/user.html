@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <table>
+        <tr valign="top">
+            <td>
+                <h1>Пользователь: {{ user.name }}</h1>
+                {% if user.about %}
+                    <p>Немного о себе: {{ user.about }}</p>
+                {% endif %}
+                {% if user == current_user %}
+                <p><a href="/edit_profile">Изменить профиль</a></p>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+{% endblock %}

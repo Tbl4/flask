@@ -1,16 +1,14 @@
 from flask import Flask, render_template, redirect, request, abort, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
-from werkzeug.urls import url_parse
 
-from forms.user import RegisterForm, LoginForm
+from forms.user import RegisterForm, LoginForm, EditProfileForm
 from data.things import Thing
 from data import db_session
 from data.users import User
 from flask_mail import Mail
 from flask import session
 
-import os
 from forms.reset_password import ResetPasswordRequestForm, ResetPasswordForm
 import random
 
@@ -79,65 +77,6 @@ def logout():
 def main():
     db_session.global_init("db/things.db")
     app.run()
-
-
-'''
-@app.route('/news', methods=['GET', 'POST'])
-@login_required
-def add_news():
-    form = NewsForm()
-    if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        news = News()
-        news.title = form.title.data
-        news.content = form.content.data
-        news.is_private = form.is_private.data
-        current_user.news.append(news)
-        db_sess.merge(current_user)
-        db_sess.commit()
-        return redirect('/')
-    return render_template('news.html', title='Добавление новости', form=form)
-
-
-@app.route('/news_delete/<int:id>', methods=['GET', 'POST'])
-@login_required
-def news_delete(id):
-    db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-    if news:
-        db_sess.delete(news)
-        db_sess.commit()
-    else:
-        abort(404)
-    return redirect('/')
-
-
-@app.route('/news/<int:id>', methods=['GET', 'POST'])
-@login_required
-def edit_news(id):
-    form = NewsForm()
-    if request.method == "GET":
-        db_sess = db_session.create_session()
-        news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-        if news:
-            form.title.data = news.title
-            form.content.data = news.content
-            form.is_private.data = news.is_private
-        else:
-            abort(404)
-    if form.validate_on_submit():
-        db_sess = db_session.create_session()
-        news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-        if news:
-            news.title = form.title.data
-            news.content = form.content.data
-            news.is_private = form.is_private.data
-            db_sess.commit()
-            return redirect('/')
-        else:
-            abort(404)
-    return render_template('news.html', title='Редактирование новости', form=form)
-'''
 
 
 @app.route("/")
@@ -216,10 +155,6 @@ def login():
         print(user)
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
-            # Пока не придумал
-            # if user.is_admin:
-            #     print(1)
-            #     return redirect("/admin/")
             return redirect("/")
         return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
@@ -233,9 +168,12 @@ def reset_password_request():
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
+        print(user)
         if user:
             send_password_reset_email(user)
-        flash('Проверьте свою электронную почту, туда было отправлена ссылка для сброса пароля.')
+            flash('Проверьте свою электронную почту, туда было отправлена ссылка для сброса пароля.')
+        else:
+            flash('Такой почты не зарегестрировано!')
         return redirect(url_for('login'))
     return render_template('reset_password_request.html',
                            title='Восстановление пароля', form=form)
@@ -258,18 +196,36 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
-# Пока не придумал
-# @app.route('/admin/', methods=['GET'])
-# @login_required
-# def admin():
-#     print(2)
-#     db_sess = db_session.create_session()
-#     user = db_sess.query(User).all()[0]
-#     print(user.is_admin)
-#     if user.is_admin:
-#         return render_template('admin.html')
-#     else:
-#         return redirect('/logout')
+
+@app.route('/user/<username>')
+@login_required
+def user(username):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.name == username).first()
+    posts = [
+        {'author': user, 'body': 'Test post #1'},
+        {'author': user, 'body': 'Test post #2'}
+    ]
+    return render_template('user.html', user=user, posts=posts)
+
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.email == current_user.email).first()
+        user.name = form.name.data
+        user.about = form.about.data
+        db_sess.commit()
+        flash('Ваши изменения сохранены.')
+        return redirect(url_for('edit_profile'))
+    elif request.method == 'GET':
+        form.name.data = current_user.name
+        form.about.data = current_user.about
+    return render_template('edit_profile.html', title='Изменить профиль',
+                           form=form)
 
 
 if __name__ == '__main__':

@@ -6,11 +6,11 @@ from wtforms.fields.html5 import EmailField
 
 class ResetPasswordRequestForm(FlaskForm):
     email = EmailField('Почта', validators=[DataRequired()])
-    submit = SubmitField('Request Password Reset')
+    submit = SubmitField('Подтвердить')
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Password', validators=[DataRequired()])
+    password = PasswordField('Пароль', validators=[DataRequired()])
     password2 = PasswordField(
-        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Request Password Reset')
+        'Повторите пароль', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Подтвердить')

@@ -15,7 +15,8 @@
         <a class="navbar-brand" href="/">Голосовать!</a>
 	<a class="navbar-brand" href="/rating">Смотреть рейтинг!</a>
         {% if current_user.is_authenticated %}
-        <a class="navbar-brand" href="/logout">{{ current_user.name }}</a>
+        <a href="/user/{{ current_user.name }}">Профиль: {{ current_user.name }}</a>
+        <a class="btn btn-danger" href="/logout">Выйти</a>
         {% else %}
         <p>
             <a class="btn btn-primary " href="/register">Зарегистрироваться</a>
